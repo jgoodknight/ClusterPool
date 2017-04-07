@@ -32,10 +32,12 @@ class Pool(object):
 
     MINIMUM_NUMBER_TRAWLERS = 10
 
-    def __init__(self, maximum_number_of_jobs_running = -1, cluster_dispatcher_type = "SLURM"):
+    def __init__(self, maximum_number_of_jobs_running = -1, cluster_dispatcher_type = "SLURM", TEST_MODE = False):
         "initialize a ClusterPool.Pool object to work on a specific cluster architecture"
         self.maximum_number_of_jobs_running = maximum_number_of_jobs_running
         self.cluster_dispatcher_type = cluster_dispatcher_type
+
+        self.TEST_MODE = TEST_MODE
 
 
     def map(self, function_to_apply, list_of_objects_to_calculate, index_of_slowest_calculation = -1, time_multiplier_worst_case = 6.0, memory_multiplier_worst_case = 1.2):
@@ -51,7 +53,11 @@ class Pool(object):
         self.slowest_calculation_completed = None
 
         start_time = time.time()
-        self.slowest_calculation_completed = self.slowest_calculation.calculate()
+
+        if self.TEST_MODE:
+            self.slowest_calculation_completed =self.slowest_calculation.calculate_safely()
+        else:
+            self.slowest_calculation_completed =self.slowest_calculation.calculate()
         self.slowest_time_elapsed_s = time.time() - start_time
         process_completion_time_to_request_minutes = ( time_multiplier_worst_case * self.slowest_time_elapsed_s ) / 60.0
         process_memory_to_request_MB = memory_multiplier_worst_case * self.peak_memory_usage_megabytes()
@@ -60,7 +66,7 @@ class Pool(object):
         number_of_trawlers_to_create = int(math.ceil(float(len(list_of_objects_to_calculate) / number_of_processes_per_trawler)))
         number_of_trawlers_to_create = max([number_of_trawlers_to_create, Pool.MINIMUM_NUMBER_TRAWLERS])
 
-        print "done!  child processes will request %s MB of RAM and %s minuters per core" % (str(process_memory_to_request_MB), str(process_completion_time_to_request_minutes)  )
+        print "done!  child processes will request %s MB of RAM and %s minutes per core" % (str(process_memory_to_request_MB), str(process_completion_time_to_request_minutes)  )
 
         print "creating dispatcher"
         my_dispatcher = Dispatcher.return_appropriate_dispatcher_object(self.cluster_dispatcher_type)(process_completion_time_to_request_minutes, process_memory_to_request_MB)
@@ -83,16 +89,18 @@ class Pool(object):
         print("Spawning Trawlers")
         my_dispatcher.start_subprocess_trawlers(number_of_trawlers_to_create)
 
-        myTrawler = Trawler.Trawler(my_dispatcher.file_directory(), number=-1)
+        myTrawler = Trawler.Trawler(my_dispatcher.file_directory(), number=-1, TEST_MODE = self.TEST_MODE, IGNORE_MUTEX=True)
 
         total_completed_calculations = 1
         loop_count = 0
 
-        time.sleep(5)
+        # time.sleep(5)
         print("checking for finished calculations...")
         while len(unfinished_process_ids) > 0:
+            time.sleep(5)
             try:
                 myTrawler.find_and_complete_calculation()
+
             except Trawler.noMoreFilesToCalculate:
                 pass
 
@@ -113,6 +121,7 @@ class Pool(object):
                 except:
 
                     continue
+            #TODO: add trawler re-start for killed processes
 
         my_dispatcher.kill_dispatcher()
         return calculated_objects

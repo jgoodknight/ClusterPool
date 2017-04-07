@@ -15,16 +15,19 @@ class noMoreFilesToCalculate(Exception):
 
 class Trawler(object):
 
-    def __init__(self, file_directory, number = 0, function = None):
+    def __init__(self, file_directory, number = 0, function = None, TEST_MODE=False, IGNORE_MUTEX=False):
         sys.path.append(os.getcwd())
         self.myDirectory = file_directory
         self.myNumber = number
 
         if function == None:
-            self.myFunction = lambda x: x.calculate()
+            if TEST_MODE:
+                self.myFunction = lambda x: x.calculate_safely()
+            else:
+                self.myFunction = lambda x: x.calculate()
 
         self.number_of_completed_calculations = 0
-
+        self.IGNORE_MUTEX = IGNORE_MUTEX
     def run(self):
         while True:
             try:
@@ -50,6 +53,8 @@ class Trawler(object):
                     working_mutex_filename = self.myDirectory + idNumber+ ".working"
                     fff = open(working_mutex_filename, 'r')
                     fff.close()
+                    if self.IGNORE_MUTEX:
+                        raise IOError() # raise the error anyway if we were told to ignore the mutex
                 except IOError:
                     #the system will throw an io error if #.working does not exist, which means we can calculate!
                     f = open(working_mutex_filename, 'w')

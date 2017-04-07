@@ -34,12 +34,13 @@ class is_prime(object):
         if self.calculated:
             return self
         time.sleep(5 * random.random())
-        # if random.random() < .2:
-        #     raise Exception("Darn you!  I quit")
-        # if random.random() < .15:
-        #     myPid = os.getpid()
-        #     os.system("kill -9 %s" % str(myPid))
-        if random.random() < .5:
+        if random.random() < .05:
+            raise Exception("Darn you!  I quit")
+        if random.random() < .005:
+            myPid = os.getpid()
+            print("\n\n\n\nTHAT'S IT I'M TAKING YOU ALL DOWN WITH ME!!!!\n\n\n\n")
+            os.system("kill -9 %s" % str(myPid))
+        if random.random() < .1:
             warnings.warn("Darn you, I'm on break!")
             time.sleep(10)
 

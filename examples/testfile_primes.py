@@ -31,8 +31,8 @@ objects_to_calculate.append(PrimeChecker.is_prime(slow_Calculation_prime))
 initial_test_object = PrimeChecker.is_prime(858599503)
 
 print "initiating Pool"
-# myPool = ClusterPool.Pool(cluster_dispatcher_type = "SLURM")
-myPool = ClusterPool.Pool(cluster_dispatcher_type = "normal")
+# myPool = ClusterPool.Pool(cluster_dispatcher_type = "SLURM", TEST_MODE=True)
+myPool = ClusterPool.Pool(cluster_dispatcher_type = "normal", TEST_MODE=True)
 print "mapping calculation onto object"
 calculated_objects = myPool.map(RED_BUTTON, objects_to_calculate)
 print "calculations done, reading results"
